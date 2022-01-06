@@ -8,6 +8,7 @@ build: compile
 	cat src/before.html > build/index.html
 	cat temp/main.js >> build/index.html
 	cat src/after.html >> build/index.html
+	cp deps/w.min.full.js build/
 
 retail: compile
 	mkdir -p retail
