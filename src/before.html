@@ -5,3 +5,8 @@ zzfx_v=.1;zzfx_x=new AudioContext;z=(g,h,a,b=1,c=.1,k=0,f=0,l=0,m=0)=>{let q=441
 ws='\u25A0'
 bs='\u25A1'
 
+// :HACK: Hack for better W performances
+
+window.setTimeout = function(func) {
+    func();
+}
