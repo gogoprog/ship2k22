@@ -2,7 +2,7 @@
 
 Reboot of a shmup game in 3D!
 
-Less than 20KB!
+Less than 32KB!
 
 Uses [haxe-w](https://github.com/gogoprog/haxe-w)
 
