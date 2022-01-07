@@ -29,17 +29,28 @@ typedef Bonus = {
 class Main {
 
     static var canvasCounter = 0;
-    static function createText(text:String):js.html.CanvasElement {
+    static var canvasTextCache = new Map<js.html.CanvasElement, String>();
+
+    static function updateCanvasText(canvas:js.html.CanvasElement, text:String, color:String):Bool {
+        if(canvasTextCache[canvas] != text) {
+            var ctx:js.html.CanvasRenderingContext2D = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 256, 64);
+            ctx.font = '32px monospace';
+            ctx.fillStyle = color;
+            ctx.fillText(text, 32, 32);
+            canvasTextCache[canvas] = text;
+            return true;
+        }
+
+        return false;
+    }
+
+    static function createText(text:String, color:String):js.html.CanvasElement {
         var c:js.html.CanvasElement = cast window.document.createElement("canvas");
         c.id = "cid" + canvasCounter++;
         c.width = 256;
         c.height= 64;
-
-        var ctx:js.html.CanvasRenderingContext2D = c.getContext('2d');
-        ctx.font = '32px serif';
-        ctx.fillStyle = "#fff";
-        ctx.fillText(text, 32, 32);
-
+        updateCanvasText(c, text, color);
 
         return c;
     }
@@ -93,12 +104,12 @@ class Main {
         function fire(x, y, d) {
             bullets[getn(bullets)] = {x:x, y:y, d:d};
         }
-        function explode(x, y) {
-            for(j in 0...28) {
+        function explode(x, y, count) {
+            for(j in 0...count) {
                 particles[getn(particles)] = {x:x, y:y, t:0};
             }
 
-            untyped z(1, .05, 652, 1, .01, .6, 4, 71, .9);
+            untyped z(count / 32, .05, count * 20, 1, .01, .6, 4, 71, .9);
         }
         W.reset(c);
         W.clearColor("#001");
@@ -137,16 +148,21 @@ class Main {
             W.sphere({n:"bo" + i, size:16, b:"#2a2"});
         }
 
+        var canvasBestScore = createText("", "#fff");
         W.group({n:"menu"});
-        W.plane({g:"menu", w:356, h:140, x:256, y:100, rz:180, t:createText("Ship2k22"), b:"#f00"});
+        W.plane({g:"menu", w:800, h:200, x:156, y:100, rz:180, t:createText("SHIP2k22", "#fff")});
+        W.plane({g:"menu", w:512, h:100, x:280, y:476, z:2, rz:180, t:createText("Click to start!", "#fd1")});
+        W.plane({g:"menu", n:"best", w:256, h:32, x:256, y:400, rz:180, t:canvasBestScore});
         W.group({n:"hud"});
-        W.plane({g:"hud", w:200, h:100, x:400, y:490, rz:180, t:createText("HP:"), b:"#f00"});
-
+        W.plane({g:"hud", w:512, h:30, x:256, y:499, z:1, b:"#888"});
+        var canvasLife = createText("====", "#000");
+        var canvasScore = createText("000", "#000");
+        var canvasDummy= createText("dummy", "#000");
+        W.plane({g:"hud", n:"life", w:200, h:60, x:400, y:506, z:2, rz:180, t:canvasLife});
+        W.plane({g:"hud", n:"score", w:200, h:60, x:100, y:506, z:2, rz:180, t:canvasScore});
         var time_start = Date.now().getTime();
-
         function loop(t:Float) {
             rseed = 1;
-
             t = Date.now().getTime() - time_start;
 
             for(i in 0...max_stars) {
@@ -156,18 +172,18 @@ class Main {
             if(state == 0) {
                 W.move({n:"menu", x:0});
                 W.move({n:"hud", x:-10000});
+                W.move({n:"ship", x:286, y:276, z:400});
 
-                /* scale(4); */
-                /* ftext("SHIP2k", 24, 32); */
-                /* scale(1/2); */
-                /* drawShip(200, 160); */
-                /* ftext("Click to play!", 42, 232); */
-                /* scale(1/2); */
-                /* ftext("Best score: " + bestScore, 32, 232); */
+                if(updateCanvasText(canvasBestScore, "Highscore: "+bestScore, "#aaa")) {
+                    untyped W.textures[canvasBestScore.id] = null;
+                    W.move({n:"best", t:canvasBestScore});
+                }
+
                 if(mustFire && time > 60) {
+                    W.move({n:"ship", x:256, y:460, z:0});
                     state++;
                     lastFireTime = time = score = 0;
-                    life = 30;
+                    life = 10;
                     power = 1;
                     bullets = [];
                     enemies = [];
@@ -183,14 +199,12 @@ class Main {
 
                     if(b!=null) {
                         b.y += 10 * b.d;
-                        /* col(b.d == -1 ? "#0f0" : "red"); */
                         W.move({n:"b"+i, x:b.x, y:b.y});
 
                         if(b.d > 0) {
                             if(abs(b.y - 420) + abs(b.x-mx) < 32) {
                                 life--;
                                 b.y = 999;
-                                /* alpha(0.5); */
                                 untyped z(1, .05, 918, .8, .04, 0, .2, 24, .6);
 
                                 if(life < 1) {
@@ -283,11 +297,12 @@ class Main {
                                     b.y = -999;
                                     e.life -= 1;
                                     untyped z(1, .05, 179, .1, .5, 3.5, 1.7, 80, .6);
+                                    explode(x, y, 4);
 
                                     if(e.life < 1) {
                                         e.t = 666;
                                         score += 100;
-                                        explode(x, y);
+                                        explode(x, y, 28);
 
                                         if(random() < 0.6) {
                                             bonuses[getn(bonuses)] = {x:x, y:y, b:time%2};
@@ -309,14 +324,22 @@ class Main {
                     enemies[getn(enemies)] = {x: screenSize * random(), t:0, life:5};
                 }
 
-                /* alpha(1); */
-                /* col("#222"); */
-                /* drawRect(256, 500, screenSize, 24); */
-                /* col("#aaf"); */
-                /* var str = ""; */
-                /* for(i in 0...10) { */
-                /*     str += i < life ? untyped ws : untyped bs; */
-                /* } */
+                var str = "";
+
+                for(i in 0...10) {
+                    str += i < life ? untyped ws : untyped bs;
+                }
+
+                if(updateCanvasText(canvasLife, str, "#000")) {
+                    untyped W.textures[canvasLife.id] = null;
+                    W.move({n:"life", t:canvasLife});
+                }
+
+                if(updateCanvasText(canvasScore, ""+score, "#000")) {
+                    untyped W.textures[canvasScore.id] = null;
+                    W.move({n:"score", t:canvasScore});
+                }
+
                 /* ftext(str, 12, 506); */
                 /* ftext(cast score, 400, 506); */
                 /* ftext(cast power, 166, 506); */
