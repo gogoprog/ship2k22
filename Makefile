@@ -17,7 +17,7 @@ retail: compile
 	cat src/before.html > retail/index.html
 	cat temp/main.min.js >> retail/index.html
 	cat src/after.html >> retail/index.html
-	cp deps/w.min.full.js build/
+	cp deps/w.min.full.js retail/
 	stat retail/index.html | grep Size
 
 zip: retail
