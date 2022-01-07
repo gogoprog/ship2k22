@@ -7,6 +7,8 @@ bs='\u25A1'
 
 // :HACK: Hack for better W performances
 
+window._setTimeout = window.setTimeout;
+
 window.setTimeout = function(func) {
     func();
 }

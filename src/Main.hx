@@ -37,7 +37,7 @@ class Main {
 
         var ctx:js.html.CanvasRenderingContext2D = c.getContext('2d');
         ctx.font = '32px serif';
-        ctx.fillStyle = "#000";
+        ctx.fillStyle = "#fff";
         ctx.fillText(text, 32, 32);
 
 
@@ -141,8 +141,13 @@ class Main {
         W.plane({g:"menu", w:356, h:140, x:256, y:100, rz:180, t:createText("Ship2k22"), b:"#f00"});
         W.group({n:"hud"});
         W.plane({g:"hud", w:200, h:100, x:400, y:490, rz:180, t:createText("HP:"), b:"#f00"});
+
+        var time_start = Date.now().getTime();
+
         function loop(t:Float) {
             rseed = 1;
+
+            t = Date.now().getTime() - time_start;
 
             for(i in 0...max_stars) {
                 W.move({n:"s"+i, x:(random() * screenSize), y:((random() * screenSize + t * (random() * 0.2)) % screenSize)});
@@ -318,7 +323,8 @@ class Main {
             }
 
             time++;
-            w.requestAnimationFrame(loop);
+            /* w.requestAnimationFrame(loop); */
+            untyped w._setTimeout(loop, 1000/60);
         }
         loop(0);
     }
